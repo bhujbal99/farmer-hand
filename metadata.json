@@ -1,0 +1,13 @@
+{
+  "name": "Farmer Hand",
+  "description": "An AI-powered full-stack application that helps farmers analyze land survey reports, get crop recommendations, and manage crop lifecycles with cost estimations.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "AI-powered soil analysis",
+    "Crop recommendation engine",
+    "Weather insights",
+    "Cost estimation"
+  ]
+}
