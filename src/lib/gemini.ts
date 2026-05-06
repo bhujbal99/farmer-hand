@@ -15,7 +15,7 @@ const getAiClient = () => {
 };
 
 export async function analyzeSoil(soilData: Partial<SoilData>, imageData?: string, lang: string = "en") {
-  const model = "gemini-1.5-flash";
+  const model = "gemini-2.0-flash";
   const ai = getAiClient();
   
   console.log("Analyzing soil with data:", soilData, "image present:", !!imageData);
@@ -101,7 +101,7 @@ export async function analyzeSoil(soilData: Partial<SoilData>, imageData?: strin
 }
 
 export async function getCropLifecycle(cropName: string, lang: string = "en") {
-  const model = "gemini-1.5-flash";
+  const model = "gemini-2.0-flash";
   const ai = getAiClient();
   const prompt = `Provide a detailed crop lifecycle guide for ${cropName} in ${lang === "mr" ? "Marathi" : "English"} language. Include stages: Land Preparation, Sowing, Irrigation, Fertilization, Harvesting. 
   Also provide estimated costs per acre in Indian Rupee (INR) for seeds, fertilizers, water, and labor.
@@ -152,7 +152,7 @@ export async function getCropLifecycle(cropName: string, lang: string = "en") {
 }
 
 export async function calculateFertilizer(cropName: string, soilData: SoilData, acreage: number, lang: string = "en") {
-  const model = "gemini-1.5-flash";
+  const model = "gemini-2.0-flash";
   const ai = getAiClient();
   const prompt = `Calculate the precise fertilizer dosage for growing ${cropName} on ${acreage} acres of land. 
   Soil data: pH ${soilData.ph}, Nitrogen ${soilData.nitrogen}, Phosphorus ${soilData.phosphorus}, Potassium ${soilData.potassium}.
@@ -209,7 +209,7 @@ export async function calculateFertilizer(cropName: string, soilData: SoilData, 
 }
 
 export async function findSoilLabs(area: string, lang: string = "en") {
-  const model = "gemini-1.5-flash";
+  const model = "gemini-2.0-flash";
   const ai = getAiClient();
   const prompt = `Provide a list of 3-5 real soil testing laboratories in or near ${area}, India. 
   If you aren't sure about the specific street/building, provide the most reputable ones in that district or city.
