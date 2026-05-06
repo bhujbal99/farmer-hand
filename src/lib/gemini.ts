@@ -3,7 +3,7 @@ import { AnalysisResult, SoilData } from "../types";
 
 const getAiClient = () => {
   // Try both GEMINI_API_KEY and GEMINI_KEY fallback
-  const apiKey = process.env.GEMINI_API_KEY || "";
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_KEY;
   
   const isValid = (key: string) => key && key !== "undefined" && key !== "null" && key !== "" && key !== "MY_GEMINI_API_KEY";
 
