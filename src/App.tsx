@@ -325,12 +325,7 @@ export default function App() {
     "Image analysis is temporarily disabled. Please enter soil values manually."
   );
 };
-      reader.readAsDataURL(file);
-    } catch (err) {
-      setError("AI failed to process the image. Please try manual entry.");
-      setLoading(false);
-    }
-  };
+    
 
   const handleManualAnalyze = async () => {
     setLoading(true);
