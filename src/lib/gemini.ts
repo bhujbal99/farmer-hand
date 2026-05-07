@@ -6,17 +6,19 @@ const getAiClient = () => {
     process.env.GEMINI_API_KEY || process.env.GEMINI_KEY;
 
   const isValid = (key: string) =>
-    key &&
+    !!key &&
     key !== "undefined" &&
     key !== "null" &&
     key !== "" &&
     key !== "MY_GEMINI_API_KEY";
 
-  if (!isValid(apiKey)) {
-    throw new Error("Gemini API Key is missing or invalid.");
+  if (!isValid(apiKey as string)) {
+    throw new Error(
+      "Gemini API Key is invalid or missing. Please check Render environment variables."
+    );
   }
 
-  return new GoogleGenAI({ apiKey });
+  return new GoogleGenAI({ apiKey: apiKey as string });
 };
 
 export async function analyzeSoil(
@@ -24,33 +26,41 @@ export async function analyzeSoil(
   imageData?: string,
   lang: string = "en"
 ) {
-  const model = "gemini-flash-latest";
+  // Stable low-cost model
+  const model = "gemini-2.0-flash-lite";
+
   const ai = getAiClient();
 
-  // Disable heavy image AI analysis
+  console.log("Analyzing soil:", soilData);
+
+  // TEMPORARILY DISABLE IMAGE ANALYSIS
+  // because it consumes huge free-tier quota
   if (imageData) {
     throw new Error(
-      "Image analysis is temporarily disabled to improve free-tier stability. Please enter soil values manually."
+      "Image analysis is temporarily disabled. Please enter soil values manually."
     );
   }
 
   const prompt = `
-You are an agriculture expert.
+You are an expert agriculture assistant.
 
-Analyze this soil data:
-- pH: ${soilData.ph}
-- Nitrogen: ${soilData.nitrogen}
-- Phosphorus: ${soilData.phosphorus}
-- Potassium: ${soilData.potassium}
-- Soil Type: ${soilData.soilType}
-- Region: ${soilData.region}
-- District: ${soilData.district}
+Analyze this soil data carefully:
 
-Return simple farmer-friendly analysis in ${
+pH: ${soilData.ph}
+Nitrogen: ${soilData.nitrogen}
+Phosphorus: ${soilData.phosphorus}
+Potassium: ${soilData.potassium}
+Soil Type: ${soilData.soilType}
+Region: ${soilData.region}
+District: ${soilData.district}
+
+Provide accurate and practical farming guidance.
+
+Return response in ${
     lang === "mr" ? "Marathi" : "English"
-  }.
+  } language.
 
-Return JSON only with:
+Return ONLY JSON with these fields:
 - explanation
 - soilCondition
 - recommendations
@@ -65,51 +75,78 @@ Return JSON only with:
       contents: prompt,
       config: {
         responseMimeType: "application/json",
+
         responseSchema: {
           type: Type.OBJECT,
-          properties: {
-            explanation: { type: Type.STRING },
 
-            soilCondition: { type: Type.STRING },
+          properties: {
+            explanation: {
+              type: Type.STRING,
+            },
+
+            soilCondition: {
+              type: Type.STRING,
+            },
 
             recommendations: {
               type: Type.ARRAY,
-              items: { type: Type.STRING },
+              items: {
+                type: Type.STRING,
+              },
             },
 
             fertilizers: {
               type: Type.OBJECT,
+
               properties: {
                 chemical: {
                   type: Type.ARRAY,
-                  items: { type: Type.STRING },
+                  items: {
+                    type: Type.STRING,
+                  },
                 },
 
                 natural: {
                   type: Type.ARRAY,
-                  items: { type: Type.STRING },
+                  items: {
+                    type: Type.STRING,
+                  },
                 },
               },
+
               required: ["chemical", "natural"],
             },
 
             risks: {
               type: Type.ARRAY,
-              items: { type: Type.STRING },
+              items: {
+                type: Type.STRING,
+              },
             },
 
             phCorrection: {
               type: Type.OBJECT,
+
               properties: {
-                required: { type: Type.BOOLEAN },
+                required: {
+                  type: Type.BOOLEAN,
+                },
 
-                treatment: { type: Type.STRING },
+                treatment: {
+                  type: Type.STRING,
+                },
 
-                quantityPerAcre: { type: Type.STRING },
+                quantityPerAcre: {
+                  type: Type.STRING,
+                },
 
-                estimatedCostPerAcre: { type: Type.STRING },
+                estimatedCostPerAcre: {
+                  type: Type.STRING,
+                },
 
-                instructions: { type: Type.STRING },
+                instructions: {
+                  type: Type.STRING,
+                },
               },
 
               required: [
@@ -142,93 +179,173 @@ Return JSON only with:
   } catch (err: any) {
     console.error("Gemini API Error:", err);
 
+    // Better user-friendly errors
     if (err.message?.includes("429")) {
       throw new Error(
-        "AI usage limit reached. Please wait a minute and try again."
+        "AI usage limit reached. Please wait 1 minute and try again."
       );
     }
 
     if (err.message?.includes("503")) {
       throw new Error(
-        "AI servers are busy right now. Please try again after some time."
+        "AI servers are busy currently. Please try again shortly."
       );
     }
 
-    throw new Error(err.message || "Failed to analyze soil");
+    if (err.message?.includes("404")) {
+      throw new Error(
+        "AI model unavailable currently. Please contact support."
+      );
+    }
+
+    throw new Error(err.message || "Failed to analyze soil.");
   }
 }
 
-/*
-  TEMPORARILY DISABLED
-  TO SAVE FREE-TIER QUOTA
-*/
+export async function getCropLifecycle(
+  cropName: string,
+  lang: string = "en"
+) {
+  // Static fallback to save quota
 
-export async function getCropLifecycle() {
   return {
     stages: [
       {
         stage: "Land Preparation",
-        description: "Prepare soil properly before sowing.",
-        timing: "1-2 weeks before sowing",
+        description:
+          lang === "mr"
+            ? "पेरणीपूर्वी जमीन तयार करा."
+            : "Prepare land properly before sowing.",
+        timing:
+          lang === "mr"
+            ? "पेरणीपूर्वी १-२ आठवडे"
+            : "1-2 weeks before sowing",
       },
 
       {
         stage: "Sowing",
-        description: "Use quality seeds with proper spacing.",
-        timing: "Beginning of season",
+        description:
+          lang === "mr"
+            ? "योग्य अंतरावर बियाणे पेरा."
+            : "Sow seeds with proper spacing.",
+        timing:
+          lang === "mr"
+            ? "हंगामाच्या सुरुवातीला"
+            : "Beginning of season",
       },
 
       {
         stage: "Irrigation",
-        description: "Provide water based on crop requirement.",
-        timing: "Every few days",
+        description:
+          lang === "mr"
+            ? "नियमित पाणी द्या."
+            : "Provide water regularly.",
+        timing:
+          lang === "mr"
+            ? "प्रत्येक काही दिवसांनी"
+            : "Every few days",
       },
 
       {
         stage: "Harvesting",
-        description: "Harvest when crop is mature.",
-        timing: "End of crop cycle",
+        description:
+          lang === "mr"
+            ? "पीक परिपक्व झाल्यावर कापणी करा."
+            : "Harvest crop after maturity.",
+        timing:
+          lang === "mr"
+            ? "हंगामाच्या शेवटी"
+            : "End of crop cycle",
       },
     ],
 
     costs: {
-      seeds: 2000,
-      fertilizers: 3000,
-      water: 1500,
-      labor: 4000,
+      seeds: 2500,
+      fertilizers: 3500,
+      water: 2000,
+      labor: 5000,
     },
   };
 }
 
-export async function calculateFertilizer() {
+export async function calculateFertilizer(
+  cropName: string,
+  soilData: SoilData,
+  acreage: number,
+  lang: string = "en"
+) {
+  // Static fallback to reduce quota usage
+
   return {
     chemicalOptions: [
       {
         name: "Urea",
-        quantity: "50kg",
-        applicationMethod: "Apply near roots",
-        estimatedCost: "₹1500",
+        quantity: `${50 * acreage} kg`,
+        applicationMethod:
+          lang === "mr"
+            ? "मुळांजवळ टाका"
+            : "Apply near root zone",
+
+        estimatedCost: `₹${1500 * acreage}`,
+      },
+
+      {
+        name: "DAP",
+        quantity: `${40 * acreage} kg`,
+        applicationMethod:
+          lang === "mr"
+            ? "पेरणीपूर्वी मिसळा"
+            : "Mix before sowing",
+
+        estimatedCost: `₹${1800 * acreage}`,
       },
     ],
 
     naturalOptions: [
       {
         name: "Compost",
-        quantity: "2 tons",
-        applicationMethod: "Mix with soil",
-        estimatedCost: "₹2500",
+        quantity: `${2 * acreage} tons`,
+        applicationMethod:
+          lang === "mr"
+            ? "जमिनीत मिसळा"
+            : "Mix into soil",
+
+        estimatedCost: `₹${2500 * acreage}`,
+      },
+
+      {
+        name: "Vermicompost",
+        quantity: `${500 * acreage} kg`,
+        applicationMethod:
+          lang === "mr"
+            ? "पिकाभोवती वापरा"
+            : "Apply around crops",
+
+        estimatedCost: `₹${3000 * acreage}`,
       },
     ],
   };
 }
 
-export async function findSoilLabs(area: string) {
+export async function findSoilLabs(
+  area: string,
+  lang: string = "en"
+) {
   return {
     labs: [
       {
-        name: `${area} Government Soil Testing Center`,
+        name:
+          lang === "mr"
+            ? `${area} शासकीय मृदा परीक्षण केंद्र`
+            : `${area} Government Soil Testing Center`,
+
         address: `${area}, India`,
-        contact: "Visit local agriculture office",
+
+        contact:
+          lang === "mr"
+            ? "स्थानिक कृषी कार्यालयाला भेट द्या"
+            : "Visit local agriculture office",
+
         type: "Government",
       },
     ],
