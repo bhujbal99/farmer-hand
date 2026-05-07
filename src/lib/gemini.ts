@@ -331,23 +331,93 @@ export async function findSoilLabs(
   area: string,
   lang: string = "en"
 ) {
-  return {
-    labs: [
-      {
-        name:
-          lang === "mr"
-            ? `${area} शासकीय मृदा परीक्षण केंद्र`
-            : `${area} Government Soil Testing Center`,
+  const model = "gemini-2.0-flash-lite";
 
-        address: `${area}, India`,
+  const ai = getAiClient();
 
-        contact:
-          lang === "mr"
-            ? "स्थानिक कृषी कार्यालयाला भेट द्या"
-            : "Visit local agriculture office",
+  const prompt = `
+Suggest real soil testing laboratories near ${area}, India.
 
-        type: "Government",
+Return 3 realistic soil testing labs with:
+- name
+- address
+- contact
+- type
+
+Return ONLY JSON.
+
+Language: ${lang === "mr" ? "Marathi" : "English"}
+`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model,
+      contents: prompt,
+
+      config: {
+        responseMimeType: "application/json",
+
+        responseSchema: {
+          type: Type.OBJECT,
+
+          properties: {
+            labs: {
+              type: Type.ARRAY,
+
+              items: {
+                type: Type.OBJECT,
+
+                properties: {
+                  name: {
+                    type: Type.STRING,
+                  },
+
+                  address: {
+                    type: Type.STRING,
+                  },
+
+                  contact: {
+                    type: Type.STRING,
+                  },
+
+                  type: {
+                    type: Type.STRING,
+                  },
+                },
+
+                required: [
+                  "name",
+                  "address",
+                  "contact",
+                  "type",
+                ],
+              },
+            },
+          },
+
+          required: ["labs"],
+        },
       },
-    ],
-  };
+    });
+
+    if (!response.text) {
+      throw new Error("No lab data received.");
+    }
+
+    return JSON.parse(response.text);
+  } catch (err: any) {
+    console.error("Lab finder error:", err);
+
+    return {
+      labs: [
+        {
+          name: `${area} Government Soil Testing Center`,
+          address: `${area}, India`,
+          contact: "Visit local agriculture office",
+          type: "Government",
+        },
+      ],
+    };
+  }
+}
 }
