@@ -267,19 +267,9 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (analysis && analysisLang !== lang) {
-      handleManualAnalyze();
-    }
-    if (lifecycle && lifecycleLang !== lang) {
-      fetchLifecycle(lifecycle.cropName); // We'll need to store cropName in lifecycle
-    }
-    if (calcResult && calcResultLang !== lang) {
-      handleCalculateFertilizer();
-    }
-    if (labs.length > 0 && labsLang !== lang) {
-      handleFindLabs();
-    }
-  }, [lang]);
+  // Prevent automatic AI recalls on language change
+  // User must manually trigger actions
+}, [lang]);
 
   const getWeather = () => {
     if ("geolocation" in navigator) {
@@ -328,26 +318,13 @@ export default function App() {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setLoading(true);
-    setError(null);
-    try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        try {
-          const base64 = reader.result as string;
-          const result = await analyzeSoil({}, base64, lang);
-          setAnalysis(result);
-          setAnalysisLang(lang);
-          setLoading(false);
-        } catch (err: any) {
-          setError(`AI failed: ${err.message || "Unknown error"}`);
-          setLoading(false);
-        }
-      };
+ const handleImageUpload = async (
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
+  setError(
+    "Image analysis is temporarily disabled. Please enter soil values manually."
+  );
+};
       reader.readAsDataURL(file);
     } catch (err) {
       setError("AI failed to process the image. Please try manual entry.");
